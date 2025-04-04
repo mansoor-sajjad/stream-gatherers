@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static org.example.BuildInBlogGatherers.fixedWindowExample;
+import static org.example.BuildInBlogGatherers.slidingWindowExample;
+
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 public class Main {
@@ -16,11 +19,16 @@ public class Main {
     postsByCategory(posts, "Java");
 
     System.out.println("============ Before JDK 24: Group By Category =============");
-    System.out.println("============ Example Method 1: Nested Collections =============");
+    System.out.println(">>>>> Example Method 1: Nested Collections");
     nestedCollectors(posts);
-    System.out.println("============ Example Method 2: Map then Transform =============");
+    System.out.println(">>>>> Example Method 2: Map then Transform");
     mapThenTransform(posts);
 
+    System.out.println("============ After JDK 24: Gatherer Example Usages =============");
+    // Batching
+    fixedWindowExample(posts);
+    // Sliding window
+    slidingWindowExample(posts);
 
   }
 
@@ -45,8 +53,22 @@ public class Main {
     printRecentPostsByCategory(recentPostsByCategory);
   }
 
-  // Prior to JDK 24 :: How to Group By Category, order by publishedDate and limit to 3 most recent posts
+  // After JDK 24 :: Custom Gatherers
 
+  public static void groupByWithLimit(List<BlogPost> posts) {
+    // Use our custom gatherer to create a "Recent Posts By Category" view
+    Map<String, List<BlogPost>> recentPostsByCategory = posts.stream()
+        .gather(CustomBlogGatherers.groupByWithLimit(
+            BlogPost::category,    // Group by category
+            3,                     // Show only 3 recent posts per category
+            Comparator.comparing(BlogPost::publishedDate).reversed() // Newest first
+        ))
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+    printRecentPostsByCategory(recentPostsByCategory);
+  }
+
+  // Prior to JDK 24 :: How to Group By Category, order by publishedDate and limit to 3 most recent posts
   public static void mapThenTransform(List<BlogPost> posts) {
     Map<String, List<BlogPost>> recentPostsByCategory = posts.stream()
         // Group by category
